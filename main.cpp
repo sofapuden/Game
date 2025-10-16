@@ -10,7 +10,7 @@ unordered_map<string, string> Game::conv;
 unordered_map<int, int> dp;
 unordered_map<int, Game> number;
 
-int f(int mask, vector<vector<vector<int>>> pos) {
+long long f(int mask, vector<vector<vector<int>>> pos) {
 	if(dp.contains(mask)) return dp[mask];
 	int n = pos.size();
 	int m = pos[0].size();
@@ -18,7 +18,7 @@ int f(int mask, vector<vector<vector<int>>> pos) {
 	auto g = [&](int x, int y, int z) -> ll {
 		return 1ll << (x * m * k + y * k + z);
 	};
-	vector<Game> L, R;
+	vector<long long> L, R;
 
 	for(int i = 0; i < n; ++i) {
 		for(int j = 0; j < m; ++j) {
@@ -28,8 +28,8 @@ int f(int mask, vector<vector<vector<int>>> pos) {
 					assert((mask & cu) == 0);
 					pos[i][j][l] = pos[i + 1][j][l] = 1;
 					auto z = f(mask | cu, pos);
-					L.push_back(Game::games[z]);
-					R.push_back(Game::games[z]);
+					L.push_back(z);
+					R.push_back(z);
 					pos[i][j][l] = pos[i + 1][j][l] = 0;
 				}
 				if(j + 1 < m && !pos[i][j][l] && !pos[i][j + 1][l]) {
@@ -37,7 +37,7 @@ int f(int mask, vector<vector<vector<int>>> pos) {
 					assert((mask & cu) == 0);
 					pos[i][j][l] = pos[i][j + 1][l] = 1;
 					auto z = f(mask | cu, pos);
-					L.push_back(Game::games[z]);
+					L.push_back(z);
 					pos[i][j][l] = pos[i][j + 1][l] = 0;
 				}
 				if(l + 1 < k && !pos[i][j][l] && !pos[i][j][l + 1]) {
@@ -45,15 +45,14 @@ int f(int mask, vector<vector<vector<int>>> pos) {
 					assert((mask & cu) == 0);
 					pos[i][j][l] = pos[i][j][l + 1] = 1;
 					auto z = f(mask | cu, pos);
-					R.push_back(Game::games[z]);
+					R.push_back(z);
 					pos[i][j][l] = pos[i][j][l + 1] = 0;
 				}
 			}
 		}
 	}
-	Game ret(L, R);
-	ret.reduce();
-	return dp[mask] = ret.id;
+	Game ret = Game::create(L, R);
+	return dp[mask] = ret.id2;
 }
 
 int solve(vector<vector<vector<int>>> ini) {
@@ -73,26 +72,33 @@ int solve(vector<vector<vector<int>>> ini) {
 }
 
 void init() {
-	Game zero({}, {});
+	Game zero = Game::create({}, {});
 	Game::conv[to_string(zero)] = "0";
 	number[0] = zero;
 	Game ls = zero;
-	for(int i = 1; i <= 20; ++i) {
-		ls = Game({ls}, {});
+	for(int i = 1; i <= 100; ++i) {
+		ls = Game::create({ls.id2}, {});
 		number[i] = ls;
 		Game::conv[to_string(ls)] = to_string(i);
 	}
 	ls = zero;
-	for(int i = 1; i <= 20; ++i) {
-		ls = Game({}, {ls});
+	for(int i = 1; i <= 100; ++i) {
+		ls = Game::create({}, {ls.id2});
 		number[-i] = ls;
 		Game::conv[to_string(ls)] = to_string(-i);
 	}
-	Game star({zero}, {zero});
+	vector<long long> D = {zero.id2};
+	Game star = Game::create(D, D);
 	Game::conv[to_string(star)] = "*";
+	for(int i = 2; i <= 10; ++i) {
+		D.push_back(star.id2);
+		star = Game::create({D}, {D});
+		Game::conv[to_string(star)] = "*" + to_string(i);
+	}
 }
 
 int main() {
+	Game::games.reserve(1000000);
 	init();
 	int n, m, k; cin >> n >> m >> k;
 	vector<vector<vector<int>>> arena(n, vector<vector<int>> (m, vector<int> (k)));
@@ -120,7 +126,7 @@ int main() {
 		}
 		cout << "1h -> " << A << " | lower_bound -> " << lA << " | upper_bound -> " << uA <<'\n';
 		cout << "2h -> " << B << " | lower_bound -> " << lB << " | upper_bound -> " << uB <<'\n';
-		cout << "3h -> " << C << " | lower_bound -> " << lC << " | upper_bound -> " << uC <<'\n';
+		// cout << "3h -> " << C << " | lower_bound -> " << lC << " | upper_bound -> " << uC <<'\n';
 	}
 	else {
 		auto A = Game::games[solve(arena)];

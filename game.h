@@ -3,57 +3,62 @@
 using namespace std;
 
 struct Game {
-	int id, sz;
-    vector<Game> L, R;
+	long long id, sz, id2;
+    vector<long long> L, R;
 	static vector<Game> games;
 	static unordered_map<string, string> conv;
 
-    Game(vector<Game> _L = {}, vector<Game> _R = {}) : L(_L), R(_R) { 
-		sz = 1;
-		for(auto x : L) sz += x.sz;
-		for(auto x : R) sz += x.sz;
-		id = games.size();
-		games.push_back(*this);
+	static Game create(const vector<long long> &_L = {}, const vector<long long> &_R = {}) {
+		Game g;
+		static long long cnt = 0;
+
+		g.sz = 1;
+		g.L = _L;
+		g.R = _R;
+		g.id = cnt++;
+
+		return games[g.reduce()];
 	}
 
     // Negation
+	// TODO : FIX
     Game operator -() const { 
-		static unordered_map<int, int> memo;
+		static unordered_map<long long, long long> memo;
 		if(memo.contains(id)) return games[memo[id]];
-        Game res(R, L);
-        for (auto &x : res.L) x = -x;
-        for (auto &x : res.R) x = -x;
-		memo[id] = res.id;
-		memo[res.id] = id;
+        Game res = Game::create(R, L);
+        for (auto &x : res.L) x = (-games[x]).id2;
+        for (auto &x : res.R) x = (-games[x]).id2;
+		memo[id2] = res.id2;
+		memo[res.id2] = id2;
         return res;
     }
 
     // Addition
     Game &operator += (const Game &o) {
-		static map<pair<int, int>, int> memo;
+		static map<pair<long long, long long>, long long> memo;
 		if(memo.contains(make_pair(id, o.id))) return *this = games[memo[make_pair(id, o.id)]];
-        vector<Game> cuL, cuR;
-        for (auto &x : o.L) cuL.push_back(*this + x);
-        for (auto &x : L) cuL.push_back(x + o);
-        for (auto &x : o.R) cuR.push_back(*this + x);
-        for (auto &x : R) cuR.push_back(x + o);
-		Game res(cuL, cuR);
-		memo[make_pair(id, o.id)] = res.id;
+        vector<long long> cuL, cuR;
+        for (auto const &x : o.L) cuL.push_back(((*this) + games[x]).id2);
+        for (auto const &x : L) cuL.push_back((games[x] + o).id2);
+        for (auto const &x : o.R) cuR.push_back(((*this) + games[x]).id2);
+        for (auto const &x : R) cuR.push_back((games[x] + o).id2);
+		Game res = Game::create(cuL, cuR);
+		memo[make_pair(id, o.id)] = res.id2;
 		return *this = res;
     }
     Game &operator -= (const Game &o) { return *this += -o; }
 
 	Game &operator *= (const Game &o) {
-		vector<Game> cuL, cuR;
-		for(auto xl : L) for(auto yl : o.L) cuL.push_back(xl * o + (*this) * yl - xl * yl);
-		for(auto xr : R) for(auto yr : o.R) cuL.push_back(xr * o + (*this) * yr - xr * yr);
-		for(auto xl : L) for(auto yr : o.R) cuR.push_back(xl * o + (*this) * yr - xl * yr);
-		for(auto xr : R) for(auto yl : o.L) cuR.push_back(xr * o + (*this) * yl - xr * yl);
+		vector<long long> cuL, cuR;
+		//for(auto xl : L) for(auto yl : o.L) cuL.push_back((xl * o + (*this) * yl - xl * yl).id2);
+		//for(auto xr : R) for(auto yr : o.R) cuL.push_back((xr * o + (*this) * yr - xr * yr).id2);
+		//for(auto xl : L) for(auto yr : o.R) cuR.push_back((xl * o + (*this) * yr - xl * yr).id2);
+		//for(auto xr : R) for(auto yl : o.L) cuR.push_back((xr * o + (*this) * yl - xr * yl).id2);
 		swap(cuL, L);
 		swap(cuR, R);
 		sz = 1;
-		for(auto x : L) sz += x.sz;
-		for(auto x : R) sz += x.sz;
+		for(auto x : L) sz += games[x].sz;
+		for(auto x : R) sz += games[x].sz;
 		return *this;
 	}
 
@@ -62,11 +67,11 @@ struct Game {
     friend Game operator * (Game a, const Game &b) { return a *= b; }
 
 	friend bool operator >= (const Game &a, const Game &b) {
-		static map<pair<int, int>, bool> memo;
+		static map<pair<long long, long long>, bool> memo;
 		if(memo.contains(make_pair(a.id, b.id))) return memo[make_pair(a.id, b.id)];
 		auto &mem = memo[make_pair(a.id, b.id)];
-		for(auto x : a.R) if(x <= b) return mem = false;
-		for(auto x : b.L) if(a <= x) return mem = false;
+		for(auto x : a.R) if(games[x] <= b) return mem = false;
+		for(auto x : b.L) if(a <= games[x]) return mem = false;
 		return mem = true;
 	}
 
@@ -83,15 +88,14 @@ struct Game {
 	}
 
     friend string to_string(Game a) { 
-		// a.reduce();
 		string out = "{";
 		for(size_t i = 0; i < a.L.size(); ++i) {
-			out += to_string(a.L[i]);
+			out += to_string(games[a.L[i]]);
 			if(i + 1 != a.L.size())out += ", ";
 		}
 		out += " | ";
 		for(size_t i = 0; i < a.R.size(); ++i) {
-			out += to_string(a.R[i]);
+			out += to_string(games[a.R[i]]);
 			if(i + 1 != a.R.size())out += ", ";
 		}
 		out += "}";
@@ -102,52 +106,58 @@ struct Game {
 		s << to_string(a); return s; 
 	}
 
-    void reduce() {
+    long long reduce() {
+		for(size_t i = 0; i < games.size(); ++i) {
+			if(*this == games[i]) {
+				return i;
+			}
+		}
+
+		games.emplace_back();
+		auto &g = games.back();
+		g.id = id;
+		g.id2 = (int)games.size() - 1;
+
 		vector<bool> actL(L.size(), 1), actR(R.size(), 1);
 		for(size_t i = 0; i < L.size(); ++i) {
 			for(size_t j = i + 1; j < L.size(); ++j) {
-				if(L[j] >= L[i]) {
+				if(games[L[j]] >= games[L[i]]) {
 					actL[i] = 0;
 					break;
 				}
-				else if(L[i] >= L[j]) {
+				else if(games[L[i]] >= games[L[j]]) {
 					actL[j] = 0;
 				}
 			}
 		}
+
 		for(size_t i = 0; i < R.size(); ++i) {
 			for(size_t j = i + 1; j < R.size(); ++j) {
-				if(R[j] <= R[i]) {
+				if(games[R[j]] <= games[R[i]]) {
 					actR[i] = 0;
 					break;
 				}
-				else if(R[i] <= R[j]) {
+				else if(games[R[i]] <= games[R[j]]) {
 					actR[j] = 0;
 				}
 			}
 		}
-		vector<Game> cuL, cuR;
-		sz = 1;
+
+		g.sz = 1;
 		for(size_t i = 0; i < actL.size(); ++i) {
 			if(actL[i]) {
-				cuL.push_back(L[i]);
-				sz += L[i].sz;
+				g.L.push_back(L[i]);
+				g.sz += games[L[i]].sz;
 			}
 		}
 		for(size_t i = 0; i < actR.size(); ++i) {
 			if(actR[i]) {
-				cuR.push_back(R[i]);
-				sz += R[i].sz;
+				g.R.push_back(R[i]);
+				g.sz += games[R[i]].sz;
 			}
 		}
-		swap(cuL, L);
-		swap(cuR, R);
-		games[id] = *this;
-		for(size_t i = 0; i < games.size(); ++i) {
-			if((sz > games[i].sz) && (*this == games[i])) {
-				*this = games[i];
-			}
-		}
+
+		return g.id2;
 	}
 };
 
