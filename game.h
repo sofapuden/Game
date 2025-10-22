@@ -21,13 +21,13 @@ struct Game {
 	}
 
     // Negation
-	// TODO : FIX
     Game operator -() const { 
 		static unordered_map<long long, long long> memo;
 		if(memo.contains(id)) return games[memo[id]];
-        Game res = Game::create(R, L);
-        for (auto &x : res.L) x = (-games[x]).id2;
-        for (auto &x : res.R) x = (-games[x]).id2;
+		vector<long long> cuL, cuR;
+        for (auto &x : L) cuR.push_back((-games[x]).id2);
+        for (auto &x : R) cuL.push_back((-games[x]).id2);
+        Game res = Game::create(cuL, cuR);
 		memo[id2] = res.id2;
 		memo[res.id2] = id2;
         return res;
@@ -46,25 +46,11 @@ struct Game {
 		memo[make_pair(id, o.id)] = res.id2;
 		return *this = res;
     }
-    Game &operator -= (const Game &o) { return *this += -o; }
 
-	Game &operator *= (const Game &o) {
-		vector<long long> cuL, cuR;
-		//for(auto xl : L) for(auto yl : o.L) cuL.push_back((xl * o + (*this) * yl - xl * yl).id2);
-		//for(auto xr : R) for(auto yr : o.R) cuL.push_back((xr * o + (*this) * yr - xr * yr).id2);
-		//for(auto xl : L) for(auto yr : o.R) cuR.push_back((xl * o + (*this) * yr - xl * yr).id2);
-		//for(auto xr : R) for(auto yl : o.L) cuR.push_back((xr * o + (*this) * yl - xr * yl).id2);
-		swap(cuL, L);
-		swap(cuR, R);
-		sz = 1;
-		for(auto x : L) sz += games[x].sz;
-		for(auto x : R) sz += games[x].sz;
-		return *this;
-	}
+    Game &operator -= (const Game &o) { return *this += -o; }
 
     friend Game operator + (Game a, const Game &b) { return a += b; }
     friend Game operator - (Game a, const Game &b) { return a -= b; }
-    friend Game operator * (Game a, const Game &b) { return a *= b; }
 
 	friend bool operator >= (const Game &a, const Game &b) {
 		static map<pair<long long, long long>, bool> memo;
@@ -91,12 +77,12 @@ struct Game {
 		string out = "{";
 		for(size_t i = 0; i < a.L.size(); ++i) {
 			out += to_string(games[a.L[i]]);
-			if(i + 1 != a.L.size())out += ", ";
+			if(i + 1 != a.L.size()) out += ", ";
 		}
 		out += " | ";
 		for(size_t i = 0; i < a.R.size(); ++i) {
 			out += to_string(games[a.R[i]]);
-			if(i + 1 != a.R.size())out += ", ";
+			if(i + 1 != a.R.size()) out += ", ";
 		}
 		out += "}";
 		if(conv.contains(out)) return conv[out];

@@ -11,7 +11,7 @@ int main(){
 		int mn = 0;
 		while(S.count(mn))mn++;
 		I.push_back(mn);
-		if(mn == 0) cout << i << ' ';
+		cout << mn << ' ';
 	}
 	cout << endl;
 	/*
