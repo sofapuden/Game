@@ -65,6 +65,14 @@ struct Game {
 		return b >= a;
     }
 
+	friend bool operator > (const Game &a, const Game &b) {
+		return a >= b && a != b;
+	}
+
+	friend bool operator < (const Game &a, const Game &b) {
+		return b > a;
+	}
+
     friend bool fuzzy(const Game &a, const Game &b) {
         return !(a >= b) && !(b >= a);
     }
@@ -93,6 +101,7 @@ struct Game {
 	}
 
     long long reduce() {
+
 		for(size_t i = 0; i < games.size(); ++i) {
 			if(*this == games[i]) {
 				return i;

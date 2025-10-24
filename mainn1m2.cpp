@@ -6,8 +6,8 @@ using namespace std;
 vector<Game> Game::games;
 unordered_map<string, string> Game::conv;
 
-unordered_map<long long, long long> dpf, dpg;
 unordered_map<long long, Game> number;
+unordered_map<long long, long long> dpf, dpg;
 
 long long f(long long k);
 long long g(long long k);

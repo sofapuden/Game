@@ -38,6 +38,7 @@ long long f(int mask, vector<vector<vector<int>>> pos) {
 					pos[i][j][l] = pos[i][j + 1][l] = 1;
 					auto z = f(mask | cu, pos);
 					L.push_back(z);
+					R.push_back(z);
 					pos[i][j][l] = pos[i][j + 1][l] = 0;
 				}
 				if(l + 1 < k && !pos[i][j][l] && !pos[i][j][l + 1]) {
@@ -45,6 +46,7 @@ long long f(int mask, vector<vector<vector<int>>> pos) {
 					assert((mask & cu) == 0);
 					pos[i][j][l] = pos[i][j][l + 1] = 1;
 					auto z = f(mask | cu, pos);
+					L.push_back(z);
 					R.push_back(z);
 					pos[i][j][l] = pos[i][j][l + 1] = 0;
 				}
