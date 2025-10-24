@@ -4,3 +4,5 @@ To compile e.g. main use:
 
 main takes `n, m, k` the dimensions of the arena. Then $n \cdot m \cdot k$ integers (either 0 or 1) describing the arena of the game.
 
+mainGitter takes `n, m, k` the dimensions of the arena, then it calculates G(S(n, m, k))
+
